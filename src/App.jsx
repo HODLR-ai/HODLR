@@ -140,6 +140,37 @@ const WalletConnection = () => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+  }, []);
+
+  // Check if mobile app is installed
+  const checkMobileApp = (appScheme) => {
+    return new Promise((resolve) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = appScheme;
+      
+      let timeout = setTimeout(() => {
+        resolve(false);
+        document.body.removeChild(iframe);
+      }, 1000);
+      
+      window.addEventListener('blur', () => {
+        clearTimeout(timeout);
+        resolve(true);
+        document.body.removeChild(iframe);
+      }, { once: true });
+      
+      document.body.appendChild(iframe);
+    });
+  };
 
   const walletOptions = [
     {
@@ -147,7 +178,7 @@ const WalletConnection = () => {
       icon: (
         <svg width="32" height="32" viewBox="0 0 128 128" fill="none">
           <rect width="128" height="128" rx="20" fill="url(#phantom-gradient)"/>
-          <path d="M96 41.5c-16.5-16.5-43.5-16.5-60 0-16.5 16.5-16.5 43.5 0 60 8.25 8.25 19.12 12.37 30 12.37s21.75-4.12 30-12.37c16.5-16.5 16.5-43.5 0-60z" fill="white"/>
+          <path d="M96 41.5c-16.5-16.5-43.5-43.5-60 0-16.5 16.5-16.5 43.5 0 60 8.25 8.25 19.12 12.37 30 12.37s21.75-4.12 30-12.37c16.5-16.5 16.5-43.5 0-60z" fill="white"/>
           <defs>
             <linearGradient id="phantom-gradient">
               <stop stopColor="#9945FF"/>
@@ -157,7 +188,13 @@ const WalletConnection = () => {
         </svg>
       ),
       detect: () => window.solana && window.solana.isPhantom,
+      detectMobile: () => checkMobileApp('phantom://'),
+      mobileDeepLink: 'phantom://browse/' + encodeURIComponent(window.location.href),
       connect: async () => {
+        if (isMobile && !window.solana) {
+          window.location.href = 'phantom://browse/' + encodeURIComponent(window.location.href);
+          return null;
+        }
         const response = await window.solana.connect();
         return response.publicKey.toString();
       }
@@ -171,7 +208,13 @@ const WalletConnection = () => {
         </svg>
       ),
       detect: () => window.solflare && window.solflare.isSolflare,
+      detectMobile: () => checkMobileApp('solflare://'),
+      mobileDeepLink: 'solflare://browse/' + encodeURIComponent(window.location.href),
       connect: async () => {
+        if (isMobile && !window.solflare) {
+          window.location.href = 'solflare://browse/' + encodeURIComponent(window.location.href);
+          return null;
+        }
         const response = await window.solflare.connect();
         return response.publicKey.toString();
       }
@@ -185,7 +228,13 @@ const WalletConnection = () => {
         </svg>
       ),
       detect: () => window.backpack,
+      detectMobile: () => checkMobileApp('backpack://'),
+      mobileDeepLink: 'backpack://browse/' + encodeURIComponent(window.location.href),
       connect: async () => {
+        if (isMobile && !window.backpack) {
+          window.location.href = 'backpack://browse/' + encodeURIComponent(window.location.href);
+          return null;
+        }
         const response = await window.backpack.connect();
         return response.publicKey.toString();
       }
@@ -429,10 +478,11 @@ const Header = () => {
     </header>
   );
 };
+
 // Hero Section
 const HeroSection = () => {
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center bg-black text-white relative overflow-hidden">
+    <section id="home" className="min-h-screen flex items-center justify-center bg-black text-white relative overflow-hidden pt-20 sm:pt-24">
       {/* Enhanced grid background */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{
