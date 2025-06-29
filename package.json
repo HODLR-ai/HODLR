@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://HODLR-ai.github.io/HODLR",
+  "homepage": "https://hodlrsol.xyz",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
